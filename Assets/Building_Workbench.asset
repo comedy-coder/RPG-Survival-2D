@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 248bf511ec7815149a6f4ec99bd8b8ae, type: 3}
+  m_Name: Building_Workbench
+  m_EditorClassIdentifier: 
+  buildingName: Workbench
+  description: 
+  buildingIcon: {fileID: 0}
+  buildingPrefab: {fileID: 5822921679858512270, guid: 06f168d238393ac42b9db8d1e95732f2, type: 3}
+  requiredMaterials:
+  - materialName: ' Wood'
+    amount: 2
+  - materialName: 'Stone '
+    amount: 3
+  constructionTime: 2
+  maxDurability: 100
+  canBeDestroyed: 1
+  canBeUpgraded: 0
+  buildingType: 5
