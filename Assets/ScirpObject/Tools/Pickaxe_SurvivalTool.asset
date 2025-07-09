@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74a71187ba371084ebc57dd97753eb39, type: 3}
+  m_Name: Pickaxe_SurvivalTool
+  m_EditorClassIdentifier: 
+  toolName: Pickaxe
+  toolDescription: A basic survival tool
+  toolIcon: {fileID: 0}
+  toolType: 0
+  damagePerHit: 25
+  attackRange: 2
+  cooldownTime: 0.5
+  maxDurability: 100
+  durabilityLossPerUse: 1
+  woodEffectiveness: 1
+  stoneEffectiveness: 0.7
+  metalEffectiveness: 0.3
+  resourcesPerHit: 2
+  gatherTime: 1
+  primaryResourceType: Wood
+  bonusYieldChance: 0.15
+  bonusYieldMultiplier: 1.5
+  canFindRareResources: 0
+  rareResourceChance: 0.05
+  canRepairBuildings: 0
+  repairCostWood: 1
+  useSound: {fileID: 0}
+  hitSound: {fileID: 0}
+  gatherSound: {fileID: 0}
+  repairSound: {fileID: 0}
+  criticalHitSound: {fileID: 0}
+  hitEffect: {fileID: 0}
+  criticalHitEffect: {fileID: 0}
+  gatherEffect: {fileID: 0}
+  repairEffect: {fileID: 0}
+  toolUIColor: {r: 1, g: 1, b: 1, a: 1}
+  respectBuildMode: 1
+  buildModeProtectionDelay: 1
