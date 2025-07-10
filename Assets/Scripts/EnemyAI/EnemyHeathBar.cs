@@ -1,430 +1,362 @@
 using UnityEngine;
-using UnityEngine.UI;
 using System.Collections;
 
-public class AdvancedHealthBar : MonoBehaviour
+// =============================================================================
+// ENEMY HEALTH - HOÀN TOÀN ĐỘC LẬP, KHÔNG CẦN ADVANCEDHEALTHBAR
+// =============================================================================
+
+public class EnemyHealth : MonoBehaviour
 {
-    [Header("Health Bar Settings")]
+    [Header("Enemy Health Settings")]
     public float maxHealth = 100f;
     public float currentHealth = 100f;
     
+    [Header("Death Settings")]
+    public bool destroyOnDeath = true;
+    public float deathDelay = 2f;
+    
     [Header("Visual Settings")]
-    public Vector3 offset = new Vector3(0, 0.2f, 0); // ✅ Closer to enemy
-    public Vector2 size = new Vector2(1.0f, 0.12f); // ✅ Longer width
-    public bool alwaysVisible = false;
-    public bool autoHide = true;
-    public float autoHideDelay = 3f;
+    public bool flashOnDamage = true;
+    public Color damageFlashColor = Color.red;
+    public float flashDuration = 0.2f;
     
-    [Header("Colors")]
-    public Color healthyColor = Color.green;
-    public Color damagedColor = Color.yellow;
-    public Color criticalColor = Color.red;
-    public Color backgroundColor = new Color(0.2f, 0.2f, 0.2f, 0.8f);
-    
-    [Header("Animation")]
-    public bool smoothTransition = true;
-    public float transitionSpeed = 5f;
-    public bool pulseWhenLow = true;
+    [Header("Debug")]
+    public bool showDebugLogs = true;
     
     // Components
-    private Canvas canvas;
-    private Slider healthSlider;
-    private Image fillImage;
-    private Image backgroundImage;
-    private RectTransform canvasRect;
-    private Camera mainCamera;
+    private SpriteRenderer spriteRenderer;
+    private Color originalColor;
+    private bool isDead = false;
     
-    // Animation
-    private float targetHealth;
-    private bool isVisible = true;
-    private Coroutine hideCoroutine;
-    private Coroutine pulseCoroutine;
+    // Events
+    public System.Action<float> OnHealthChanged;
+    public System.Action OnDeath;
     
     void Start()
     {
-        mainCamera = Camera.main;
-        targetHealth = currentHealth;
-        
-        // ✅ FORCE SETTINGS: Longer health bar, closer to enemy
-        offset = new Vector3(0, 0.2f, 0); 
-        size = new Vector2(1.0f, 0.12f);
-        
-        // ✅ DELETE OLD HEALTH BAR if exists
-        Transform existingHealthBar = transform.Find("AdvancedHealthBar");
-        if (existingHealthBar != null)
-        {
-            DestroyImmediate(existingHealthBar.gameObject);
-            Debug.Log("🗑️ Deleted old health bar");
-        }
-        
-        CreateHealthBar();
-        
-        if (!alwaysVisible)
-        {
-            SetVisibility(false);
-        }
-        
-        Debug.Log($"✅ Fixed Health Bar created: Size={size}, Position={offset}");
+        InitializeHealth();
     }
     
-    void CreateHealthBar()
+    void InitializeHealth()
     {
-        // Create Canvas
-        GameObject canvasObj = new GameObject("AdvancedHealthBar");
-        canvasObj.transform.SetParent(transform);
-        canvasObj.transform.localPosition = offset;
+        // Get sprite renderer
+        spriteRenderer = GetComponent<SpriteRenderer>();
         
-        canvas = canvasObj.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.WorldSpace;
-        canvas.sortingOrder = 1000;
-        
-        // Perfect scale for world space
-        canvasObj.transform.localScale = Vector3.one * 0.005f;
-        
-        // Add Canvas Scaler for better resolution
-        CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
-        scaler.scaleFactor = 1f;
-        
-        canvasRect = canvasObj.GetComponent<RectTransform>();
-        canvasRect.sizeDelta = size;
-        
-        // Create Background
-        GameObject bgObj = new GameObject("Background");
-        bgObj.transform.SetParent(canvasObj.transform);
-        
-        RectTransform bgRect = bgObj.AddComponent<RectTransform>();
-        backgroundImage = bgObj.AddComponent<Image>();
-        
-        // Background setup
-        bgRect.anchorMin = Vector2.zero;
-        bgRect.anchorMax = Vector2.one;
-        bgRect.offsetMin = Vector2.zero;
-        bgRect.offsetMax = Vector2.zero;
-        backgroundImage.color = backgroundColor;
-        
-        // Create Slider
-        GameObject sliderObj = new GameObject("HealthSlider");
-        sliderObj.transform.SetParent(canvasObj.transform);
-        
-        RectTransform sliderRect = sliderObj.AddComponent<RectTransform>();
-        healthSlider = sliderObj.AddComponent<Slider>();
-        
-        // Slider setup
-        sliderRect.anchorMin = Vector2.zero;
-        sliderRect.anchorMax = Vector2.one;
-        sliderRect.offsetMin = Vector2.zero;
-        sliderRect.offsetMax = Vector2.zero;
-        
-        // Create Fill Area
-        GameObject fillAreaObj = new GameObject("Fill Area");
-        fillAreaObj.transform.SetParent(sliderObj.transform);
-        
-        RectTransform fillAreaRect = fillAreaObj.AddComponent<RectTransform>();
-        fillAreaRect.anchorMin = Vector2.zero;
-        fillAreaRect.anchorMax = Vector2.one;
-        fillAreaRect.offsetMin = Vector2.zero;
-        fillAreaRect.offsetMax = Vector2.zero;
-        
-        // Create Fill
-        GameObject fillObj = new GameObject("Fill");
-        fillObj.transform.SetParent(fillAreaObj.transform);
-        
-        RectTransform fillRect = fillObj.AddComponent<RectTransform>();
-        fillImage = fillObj.AddComponent<Image>();
-        
-        // Fill setup
-        fillRect.anchorMin = Vector2.zero;
-        fillRect.anchorMax = Vector2.one;
-        fillRect.offsetMin = Vector2.zero;
-        fillRect.offsetMax = Vector2.zero;
-        fillImage.color = healthyColor;
-        
-        // Configure slider
-        healthSlider.fillRect = fillRect;
-        healthSlider.minValue = 0f;
-        healthSlider.maxValue = 1f;
-        healthSlider.value = 1f;
-        healthSlider.interactable = false;
-    }
-    
-    void Update()
-    {
-        if (smoothTransition && Mathf.Abs(currentHealth - targetHealth) > 0.1f)
+        if (spriteRenderer != null)
         {
-            currentHealth = Mathf.Lerp(currentHealth, targetHealth, transitionSpeed * Time.deltaTime);
-            UpdateHealthBar();
+            originalColor = spriteRenderer.color;
         }
         
-        // ✅ FIXED: Keep health bar horizontal (no rotation from enemy)
-        if (canvas != null)
+        // Set initial health
+        currentHealth = maxHealth;
+        
+        if (showDebugLogs)
         {
-            // Force position and scale
-            canvas.transform.localPosition = offset;
-            canvas.transform.localScale = Vector3.one * 0.005f;
-            
-            // ✅ MOST IMPORTANT: Always keep horizontal, ignore parent rotation
-            canvas.transform.rotation = Quaternion.identity;
-            
-            // Update size
-            if (canvasRect != null)
-            {
-                canvasRect.sizeDelta = size;
-            }
+            Debug.Log($"🏥 {gameObject.name} EnemyHealth initialized: {currentHealth}/{maxHealth}");
         }
     }
     
-    public void TakeDamage(float damage)
+    public void TakeDamage(float damage, GameObject attacker = null)
     {
-        float newHealth = currentHealth - damage;
-        SetHealth(newHealth);
+        if (isDead || damage <= 0) return;
         
-        Debug.Log($"💥 {gameObject.name} took {damage} damage. Health: {currentHealth:F1}/{maxHealth}");
+        // Apply damage
+        currentHealth -= damage;
+        currentHealth = Mathf.Max(0, currentHealth);
         
-        // Show health bar when damaged
-        if (!alwaysVisible)
+        // Trigger events
+        OnHealthChanged?.Invoke(currentHealth);
+        
+        // Visual feedback
+        if (flashOnDamage)
         {
-            ShowHealthBar();
+            StartCoroutine(FlashDamage());
         }
         
-        // Flash effect
-        StartCoroutine(DamageFlash());
+        if (showDebugLogs)
+        {
+            string attackerName = attacker != null ? attacker.name : "Unknown";
+            Debug.Log($"💥 {gameObject.name} took {damage} damage from {attackerName}. Health: {currentHealth:F1}/{maxHealth}");
+        }
+        
+        // Check death
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
     }
     
     public void Heal(float amount)
     {
-        float newHealth = currentHealth + amount;
-        SetHealth(newHealth);
+        if (isDead || amount <= 0) return;
         
-        Debug.Log($"💚 {gameObject.name} healed {amount}. Health: {currentHealth:F1}/{maxHealth}");
+        currentHealth += amount;
+        currentHealth = Mathf.Min(maxHealth, currentHealth);
         
-        // Show health bar when healed
-        if (!alwaysVisible)
+        // Trigger events
+        OnHealthChanged?.Invoke(currentHealth);
+        
+        if (showDebugLogs)
         {
-            ShowHealthBar();
+            Debug.Log($"💚 {gameObject.name} healed {amount}. Health: {currentHealth:F1}/{maxHealth}");
         }
     }
     
     public void SetHealth(float health)
     {
-        if (smoothTransition)
+        if (isDead) return;
+        
+        currentHealth = Mathf.Clamp(health, 0f, maxHealth);
+        
+        // Trigger events
+        OnHealthChanged?.Invoke(currentHealth);
+        
+        if (showDebugLogs)
         {
-            targetHealth = Mathf.Clamp(health, 0, maxHealth);
+            Debug.Log($"🏥 {gameObject.name} health set to: {currentHealth:F1}/{maxHealth}");
         }
-        else
+        
+        // Check death
+        if (currentHealth <= 0)
         {
-            currentHealth = Mathf.Clamp(health, 0, maxHealth);
-            targetHealth = currentHealth;
-            UpdateHealthBar();
+            Die();
         }
     }
     
-    void UpdateHealthBar()
+    void Die()
     {
-        if (healthSlider == null || fillImage == null) return;
+        if (isDead) return;
         
-        float healthPercent = currentHealth / maxHealth;
-        healthSlider.value = healthPercent;
+        isDead = true;
         
-        // Update color based on health
-        Color targetColor = GetHealthColor(healthPercent);
-        fillImage.color = targetColor;
-        
-        // Start pulsing if health is low
-        if (pulseWhenLow && healthPercent < 0.3f)
+        if (showDebugLogs)
         {
-            if (pulseCoroutine == null)
+            Debug.Log($"💀 {gameObject.name} has died!");
+        }
+        
+        // Trigger death event
+        OnDeath?.Invoke();
+        
+        // Disable AI
+        var enemyAI = GetComponent<EnemyAI>();
+        if (enemyAI != null)
+        {
+            enemyAI.enabled = false;
+        }
+        
+        // Start death sequence
+        StartCoroutine(DeathSequence());
+    }
+    
+    IEnumerator DeathSequence()
+    {
+        // Death animation - fade out
+        if (spriteRenderer != null)
+        {
+            Color currentColor = spriteRenderer.color;
+            float fadeSpeed = 1f / deathDelay;
+            
+            while (currentColor.a > 0)
             {
-                pulseCoroutine = StartCoroutine(PulseEffect());
-            }
-        }
-        else
-        {
-            if (pulseCoroutine != null)
-            {
-                StopCoroutine(pulseCoroutine);
-                pulseCoroutine = null;
-            }
-        }
-    }
-    
-    Color GetHealthColor(float healthPercent)
-    {
-        if (healthPercent > 0.6f)
-        {
-            return Color.Lerp(damagedColor, healthyColor, (healthPercent - 0.6f) / 0.4f);
-        }
-        else if (healthPercent > 0.3f)
-        {
-            return Color.Lerp(criticalColor, damagedColor, (healthPercent - 0.3f) / 0.3f);
-        }
-        else
-        {
-            return criticalColor;
-        }
-    }
-    
-    IEnumerator DamageFlash()
-    {
-        if (backgroundImage != null)
-        {
-            Color originalColor = backgroundImage.color;
-            backgroundImage.color = Color.red;
-            yield return new WaitForSeconds(0.1f);
-            backgroundImage.color = originalColor;
-        }
-    }
-    
-    IEnumerator PulseEffect()
-    {
-        float originalAlpha = fillImage.color.a;
-        
-        while (true)
-        {
-            // Fade out
-            for (float t = 0; t < 1; t += Time.deltaTime * 2f)
-            {
-                Color color = fillImage.color;
-                color.a = Mathf.Lerp(originalAlpha, 0.3f, t);
-                fillImage.color = color;
+                currentColor.a -= fadeSpeed * Time.deltaTime;
+                spriteRenderer.color = currentColor;
                 yield return null;
+            }
+        }
+        else
+        {
+            // Just wait if no sprite renderer
+            yield return new WaitForSeconds(deathDelay);
+        }
+        
+        if (destroyOnDeath)
+        {
+            if (showDebugLogs)
+            {
+                Debug.Log($"🗑️ {gameObject.name} destroyed after death delay");
             }
             
-            // Fade in
-            for (float t = 0; t < 1; t += Time.deltaTime * 2f)
-            {
-                Color color = fillImage.color;
-                color.a = Mathf.Lerp(0.3f, originalAlpha, t);
-                fillImage.color = color;
-                yield return null;
-            }
+            Destroy(gameObject);
         }
     }
     
-    public void ShowHealthBar()
+    IEnumerator FlashDamage()
     {
-        SetVisibility(true);
+        if (spriteRenderer == null) yield break;
         
-        if (hideCoroutine != null)
-        {
-            StopCoroutine(hideCoroutine);
-        }
+        // Flash to damage color
+        Color originalSpriteColor = spriteRenderer.color;
+        spriteRenderer.color = damageFlashColor;
         
-        if (autoHide && !alwaysVisible)
-        {
-            hideCoroutine = StartCoroutine(HideAfterDelay());
-        }
-    }
-    
-    IEnumerator HideAfterDelay()
-    {
-        yield return new WaitForSeconds(autoHideDelay);
-        SetVisibility(false);
-    }
-    
-    public void SetVisibility(bool visible)
-    {
-        isVisible = visible;
-        if (canvas != null)
-        {
-            canvas.gameObject.SetActive(visible);
-        }
+        yield return new WaitForSeconds(flashDuration);
+        
+        // Return to original color
+        spriteRenderer.color = originalSpriteColor;
     }
     
     // Public getters
-    public float GetHealthPercent() => currentHealth / maxHealth;
-    public bool IsAlive() => currentHealth > 0;
-    public bool IsVisible() => isVisible;
+    public float GetCurrentHealth() => currentHealth;
+    public float GetMaxHealth() => maxHealth;
+    public float GetHealthPercent() => maxHealth > 0 ? currentHealth / maxHealth : 0f;
+    public bool IsAlive() => !isDead && currentHealth > 0;
+    public bool IsDead() => isDead;
     
-    // Health bar customization
-    public void SetColors(Color healthy, Color damaged, Color critical)
+    // Public setters
+    public void SetMaxHealth(float newMaxHealth)
     {
-        healthyColor = healthy;
-        damagedColor = damaged;
-        criticalColor = critical;
-        UpdateHealthBar();
+        maxHealth = Mathf.Max(1f, newMaxHealth);
+        currentHealth = Mathf.Min(currentHealth, maxHealth);
     }
     
-    public void SetSize(Vector2 newSize)
+    public void RestoreFullHealth()
     {
-        size = newSize;
-        if (canvasRect != null)
+        currentHealth = maxHealth;
+        
+        // Trigger events
+        OnHealthChanged?.Invoke(currentHealth);
+        
+        if (showDebugLogs)
         {
-            canvasRect.sizeDelta = size;
+            Debug.Log($"🔄 {gameObject.name} health restored to full");
         }
     }
     
-    public void SetOffset(Vector3 newOffset)
+    public void Revive()
     {
-        offset = newOffset;
-        if (canvas != null)
+        if (!isDead) return;
+        
+        isDead = false;
+        currentHealth = maxHealth;
+        
+        // Restore sprite alpha
+        if (spriteRenderer != null)
         {
-            canvas.transform.localPosition = offset;
+            Color color = spriteRenderer.color;
+            color.a = 1f;
+            spriteRenderer.color = color;
+        }
+        
+        // Re-enable AI
+        var enemyAI = GetComponent<EnemyAI>();
+        if (enemyAI != null)
+        {
+            enemyAI.enabled = true;
+        }
+        
+        // Trigger events
+        OnHealthChanged?.Invoke(currentHealth);
+        
+        if (showDebugLogs)
+        {
+            Debug.Log($"🔄 {gameObject.name} has been revived!");
         }
     }
     
-    // ✅ CONTEXT MENU METHODS for easy testing
-    [ContextMenu("Make Health Bar Longer")]
-    public void MakeLonger()
-    {
-        size.x = 1.5f;
-        SetSize(size);
-        Debug.Log($"📏 Health bar made longer: {size.x}");
-    }
-    
-    [ContextMenu("Make Health Bar Shorter")]
-    public void MakeShorter()
-    {
-        size.x = 0.8f;
-        SetSize(size);
-        Debug.Log($"📏 Health bar made shorter: {size.x}");
-    }
-    
-    [ContextMenu("Move Health Bar Up")]
-    public void MoveUp()
-    {
-        offset.y += 0.1f;
-        SetOffset(offset);
-        Debug.Log($"⬆️ Health bar moved up: Y = {offset.y}");
-    }
-    
-    [ContextMenu("Move Health Bar Down")]
-    public void MoveDown()
-    {
-        offset.y -= 0.1f;
-        SetOffset(offset);
-        Debug.Log($"⬇️ Health bar moved down: Y = {offset.y}");
-    }
-    
-    [ContextMenu("Test Damage")]
-    public void TestDamage()
+    // Context menu methods for testing
+    [ContextMenu("Take 25 Damage")]
+    public void TestDamage25()
     {
         TakeDamage(25f);
     }
     
-    [ContextMenu("Force Recreate Health Bar")]
-    public void ForceRecreateHealthBar()
+    [ContextMenu("Take 50 Damage")]
+    public void TestDamage50()
     {
-        // Delete old health bar
-        if (canvas != null)
-        {
-            DestroyImmediate(canvas.gameObject);
-        }
-        
-        // Create new health bar
-        CreateHealthBar();
-        
-        if (!alwaysVisible)
-        {
-            SetVisibility(false);
-        }
-        
-        Debug.Log("🔄 Health bar recreated!");
+        TakeDamage(50f);
     }
     
-    void OnDestroy()
+    [ContextMenu("Heal 25 HP")]
+    public void TestHeal25()
     {
-        if (hideCoroutine != null) StopCoroutine(hideCoroutine);
-        if (pulseCoroutine != null) StopCoroutine(pulseCoroutine);
+        Heal(25f);
+    }
+    
+    [ContextMenu("Set Health to 1")]
+    public void TestCriticalHealth()
+    {
+        SetHealth(1f);
+    }
+    
+    [ContextMenu("Restore Full Health")]
+    public void TestRestoreFullHealth()
+    {
+        RestoreFullHealth();
+    }
+    
+    [ContextMenu("Kill Enemy")]
+    public void TestKillEnemy()
+    {
+        SetHealth(0f);
+    }
+    
+    [ContextMenu("Revive Enemy")]
+    public void TestReviveEnemy()
+    {
+        Revive();
+    }
+    
+    [ContextMenu("Show Health Status")]
+    public void ShowHealthStatus()
+    {
+        Debug.Log($"🏥 === {gameObject.name} HEALTH STATUS ===");
+        Debug.Log($"   Current Health: {currentHealth:F1}/{maxHealth:F1} ({GetHealthPercent():P1})");
+        Debug.Log($"   Is Alive: {IsAlive()}");
+        Debug.Log($"   Is Dead: {IsDead()}");
+        Debug.Log($"   Destroy On Death: {destroyOnDeath}");
+        Debug.Log($"   Death Delay: {deathDelay}s");
+        Debug.Log($"   Flash On Damage: {flashOnDamage}");
+        
+        if (spriteRenderer != null)
+        {
+            Debug.Log($"   Sprite Renderer: ✅ Found");
+            Debug.Log($"   Current Color: {spriteRenderer.color}");
+        }
+        else
+        {
+            Debug.Log($"   Sprite Renderer: ❌ Not Found");
+        }
+    }
+    
+    [ContextMenu("Test Flash Effect")]
+    public void TestFlashEffect()
+    {
+        StartCoroutine(FlashDamage());
+    }
+    
+    // Health bar visualization in Scene view
+    void OnDrawGizmosSelected()
+    {
+        if (!Application.isPlaying) return;
+        
+        // Draw health bar above enemy
+        Vector3 healthBarPos = transform.position + Vector3.up * 1.5f;
+        float healthBarWidth = 2f;
+        float healthBarHeight = 0.2f;
+        
+        // Background
+        Gizmos.color = Color.black;
+        Gizmos.DrawCube(healthBarPos, new Vector3(healthBarWidth, healthBarHeight, 0));
+        
+        // Health fill
+        float healthPercent = GetHealthPercent();
+        Color healthColor = Color.Lerp(Color.red, Color.green, healthPercent);
+        Gizmos.color = healthColor;
+        
+        Vector3 fillSize = new Vector3(healthBarWidth * healthPercent, healthBarHeight * 0.8f, 0);
+        Vector3 fillPos = healthBarPos + Vector3.left * (healthBarWidth * (1f - healthPercent) * 0.5f);
+        Gizmos.DrawCube(fillPos, fillSize);
+        
+        // Health text
+        Vector3 textPos = healthBarPos + Vector3.up * 0.3f;
+        // Note: Can't draw text in OnDrawGizmosSelected, but position is ready for custom editor
+    }
+    
+    // Validation
+    void OnValidate()
+    {
+        maxHealth = Mathf.Max(1f, maxHealth);
+        currentHealth = Mathf.Clamp(currentHealth, 0f, maxHealth);
+        deathDelay = Mathf.Max(0f, deathDelay);
+        flashDuration = Mathf.Max(0.1f, flashDuration);
     }
 }

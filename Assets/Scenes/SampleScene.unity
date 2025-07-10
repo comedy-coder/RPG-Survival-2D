@@ -1713,6 +1713,7 @@ GameObject:
   - component: {fileID: 1245879836}
   - component: {fileID: 1245879841}
   - component: {fileID: 1245879842}
+  - component: {fileID: 1245879843}
   m_Layer: 0
   m_Name: TestEnemy
   m_TagString: Enemy
@@ -1867,18 +1868,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 100
-  offset: {x: 0, y: 0.2, z: 0}
-  size: {x: 6, y: 6}
-  alwaysVisible: 0
-  autoHide: 1
-  autoHideDelay: 3
-  healthyColor: {r: 0, g: 1, b: 0, a: 1}
-  damagedColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  criticalColor: {r: 1, g: 0, b: 0, a: 1}
-  backgroundColor: {r: 0.2, g: 0.2, b: 0.2, a: 0.8}
-  smoothTransition: 1
-  transitionSpeed: 5
-  pulseWhenLow: 1
+  destroyOnDeath: 1
+  deathDelay: 2
+  flashOnDamage: 1
+  damageFlashColor: {r: 1, g: 0, b: 0, a: 1}
+  flashDuration: 0.2
+  showDebugLogs: 1
 --- !u!114 &1245879842
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1899,8 +1894,34 @@ MonoBehaviour:
   idleColor: {r: 1, g: 1, b: 1, a: 1}
   chaseColor: {r: 1, g: 0, b: 0, a: 1}
   attackColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  enableFlipping: 1
+  preserveScale: 1
   showDebugLogs: 1
   showGizmos: 1
+--- !u!114 &1245879843
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1245879834}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b21e34ca96821724597a52fce7dbfd54, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  offset: {x: 0, y: 1.2, z: 0}
+  size: {x: 0.1, y: 1}
+  alwaysVisible: 1
+  autoHide: 1
+  autoHideDelay: 3
+  healthyColor: {r: 0, g: 1, b: 0, a: 1}
+  damagedColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  criticalColor: {r: 1, g: 0, b: 0, a: 1}
+  backgroundColor: {r: 0.2, g: 0.2, b: 0.2, a: 0.8}
+  smoothTransition: 1
+  transitionSpeed: 5
+  showDebugLogs: 1
 --- !u!1 &1254016041
 GameObject:
   m_ObjectHideFlags: 0
@@ -3209,9 +3230,9 @@ GameObject:
   - component: {fileID: 2073138669}
   - component: {fileID: 2073138671}
   - component: {fileID: 2073138670}
-  - component: {fileID: 2073138672}
   - component: {fileID: 2073138673}
   - component: {fileID: 2073138674}
+  - component: {fileID: 2073138675}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -3619,19 +3640,6 @@ MonoBehaviour:
   showDamagePreview: 1
   weaponSwitchSound: {fileID: 0}
   weaponBreakSound: {fileID: 0}
---- !u!114 &2073138672
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2073138660}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7449406b1a04fcd4c8f397bd008f4ef2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  damageAmount: 25
 --- !u!114 &2073138673
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3669,6 +3677,19 @@ MonoBehaviour:
   testHealAmount: 50
   enemyPrefab: {fileID: 0}
   spawnDistance: 5
+--- !u!114 &2073138675
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2073138660}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7449406b1a04fcd4c8f397bd008f4ef2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  damageAmount: 25
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
